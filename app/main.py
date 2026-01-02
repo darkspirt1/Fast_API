@@ -11,7 +11,7 @@ import time
 from .import models, schemas, utilis
 from .database import engine, get_db
 from sqlalchemy.orm import Session
-from .routers import posts, users
+from .routers import auth, posts, users
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -58,6 +58,6 @@ def root():
 
 app.include_router(posts.router)
 app.include_router(users.router)
-
+app.include_router(auth.router)
 
 
