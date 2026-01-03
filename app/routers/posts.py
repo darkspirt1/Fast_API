@@ -21,6 +21,7 @@ def get_posts(db: Session = Depends(get_db),  current_user : int = Depends(oauth
     return posts
 
 
+
 # here we define a route to create a post and add into database
 
 
@@ -30,8 +31,8 @@ def create_post(post: schemas.CreatePost, db: Session = Depends(get_db), current
     #                (post.title, post.content, post.published))
     # new_post = cursor.fetchone()
     # conn.commit()
-    print(current_user.email)
-    new_post = models.Post(**post.dict())  # unpacking the post object
+
+    new_post = models.Post(**post.dict(), owner_id=current_user.id)  # unpacking the post object
     db.add(new_post)  # adding new post to session
     db.commit()
     db.refresh(new_post)  # to get the new post from database
