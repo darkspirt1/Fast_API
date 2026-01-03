@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from typing import Optional
 from app import oauth2
 from .. import models, schemas
 from ..database import get_db
@@ -14,10 +14,11 @@ router = APIRouter(
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=list[schemas.Post])
-def get_posts(db: Session = Depends(get_db),  current_user : int = Depends(oauth2.get_current_user)):
+def get_posts(db: Session = Depends(get_db),  current_user : int = Depends(oauth2.get_current_user), 
+              limit: int = 10, skip: int = 0, search: Optional[str] = ""):
     # cursor.execute(""" SELECT * FROM posts""")
     # posts = cursor.fetchall()
-    posts = db.query(models.Post).filter(models.Post.owner_id == current_user.id).all()
+    posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
     return posts
 
 
@@ -49,9 +50,7 @@ def get_post(id: int, db: Session = Depends(get_db), current_user : int = Depend
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id: {id} was not found")
     
-    if post.owner_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail="Not authorized to perform requested action")
+
    # if not post:
         # response.status_code = status.HTTP_404_NOT_FOUND
         # return {"message": f"post with id: {id} was not found"}
