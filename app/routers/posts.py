@@ -1,15 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
+from app import oauth2
 from .. import models, schemas
 from ..database import get_db
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/posts",
+    tags=['Posts'],
+)
 
 # here we retrieve all posts from database
 
 
-@router.get("/posts", status_code=status.HTTP_200_OK, response_model=list[schemas.Post])
-def get_posts(db: Session = Depends(get_db)):
+@router.get("/", status_code=status.HTTP_200_OK, response_model=list[schemas.Post])
+def get_posts(db: Session = Depends(get_db),  user_id : int = Depends(oauth2.get_current_user)):
     # cursor.execute(""" SELECT * FROM posts""")
     # posts = cursor.fetchall()
     posts = db.query(models.Post).all()
@@ -19,12 +24,13 @@ def get_posts(db: Session = Depends(get_db)):
 # here we define a route to create a post and add into database
 
 
-@router.post("/createpost", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
-def create_post(post: schemas.CreatePost, db: Session = Depends(get_db)):
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
+def create_post(post: schemas.CreatePost, db: Session = Depends(get_db), user_id : int = Depends(oauth2.get_current_user)):
     # cursor.execute(""" INSERT INTO posts (title,content,published) VALUES (%s,%s,%s) RETURNING * """,
     #                (post.title, post.content, post.published))
     # new_post = cursor.fetchone()
     # conn.commit()
+    print(user_id)
     new_post = models.Post(**post.dict())  # unpacking the post object
     db.add(new_post)  # adding new post to session
     db.commit()
@@ -34,8 +40,8 @@ def create_post(post: schemas.CreatePost, db: Session = Depends(get_db)):
 
 # here we define a route to get a specific post by id from database
 
-@router.get("/posts/{id}", response_model=schemas.Post)
-def get_post(id: int, db: Session = Depends(get_db)):
+@router.get("/{id}", response_model=schemas.Post)
+def get_post(id: int, db: Session = Depends(get_db), user_id : int = Depends(oauth2.get_current_user)):
     post = db.query(models.Post).filter(models.Post.id == id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -49,8 +55,8 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
 
 # here we will delete a post from database
-@router.delete("/posts/{id}",  status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db)):
+@router.delete("/{id}",  status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id: int, db: Session = Depends(get_db), user_id : int = Depends(oauth2.get_current_user)):
     deleted_post = db.query(models.Post).filter(models.Post.id == id)
     if not deleted_post.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -62,8 +68,8 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 # here we will update a post in database
 
 
-@router.put("/posts/{id}" , response_model=schemas.Post)
-def update_post(id: int, updated_post: schemas.CreatePost, db: Session = Depends(get_db)):
+@router.put("/{id}", response_model=schemas.Post)
+def update_post(id: int, updated_post: schemas.CreatePost, db: Session = Depends(get_db), user_id : int = Depends(oauth2.get_current_user)):
     post_query = db.query(models.Post).filter(models.Post.id == id)
     post = post_query.first()
     if post == None:
