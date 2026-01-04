@@ -2,6 +2,8 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
+from uvicorn import Config
+
 class PostBase(BaseModel):
     title: str
     content: str
@@ -27,6 +29,15 @@ class Post(PostBase):
 
     class Config:
         from_attributes = True
+
+
+class PostOut(BaseModel):
+    Post : Post
+    votes : int
+
+    class Config:
+        from_attributes = True
+
 
 
 class UserCreate(BaseModel):
